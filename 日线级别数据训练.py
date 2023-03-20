@@ -20,10 +20,12 @@ y = df['Close'].values
 # 将输入数据reshape为(N, 14)的形状
 X = X[:len(X)-1]
 X = X.reshape(-1, 14)
+Y = y[:len(y)-1]
+Y = Y.reshape(-1, 1)
 
 # 将输入数据转换为torch tensor，并将设备选择为mps
 X_train = torch.FloatTensor(X)
-y_train = torch.FloatTensor(y)
+y_train = torch.FloatTensor(Y)
 device = torch.device("mps")
 
 
@@ -31,14 +33,12 @@ device = torch.device("mps")
 class Net(nn.Module):
     def __init__(self):
         super(Net, self).__init__()
-        self.fc1 = nn.Linear(14, 128)
-        self.fc2 = nn.Linear(128, 64)
-        self.fc3 = nn.Linear(64, 32)
-        self.fc4 = nn.Linear(32, 16)
-        self.fc5 = nn.Linear(16, 8)
-        self.fc6 = nn.Linear(8, 4)
-        self.fc7 = nn.Linear(4, 2)
-        self.fc8 = nn.Linear(2, 1)
+        self.fc1 = nn.Linear(14, 64)
+        self.fc2 = nn.Linear(64, 32)
+        self.fc3 = nn.Linear(32, 16)
+        self.fc4 = nn.Linear(16, 8)
+        self.fc5 = nn.Linear(8, 4)
+        self.fc6 = nn.Linear(4, 1)
 
     def forward(self, x):
         x = torch.relu(self.fc1(x))
@@ -46,9 +46,7 @@ class Net(nn.Module):
         x = torch.relu(self.fc3(x))
         x = torch.relu(self.fc4(x))
         x = torch.relu(self.fc5(x))
-        x = torch.relu(self.fc6(x))
-        x = torch.relu(self.fc7(x))
-        x = self.fc8(x)
+        x = self.fc6(x)
         return x
 
 
@@ -58,16 +56,16 @@ model.to(device)
 
 # 定义损失函数和优化器
 criterion = nn.MSELoss()
-optimizer = optim.Adam(model.parameters(), lr=0.0001)
+optimizer = optim.Adam(model.parameters(), lr=0.00001)
 
 # 训练模型
-for epoch in range(10000):
+for epoch in range(4000):
     optimizer.zero_grad()
     output = model(X_train.to(device))
     loss = criterion(output, y_train.to(device))
     loss.backward()
     optimizer.step()
-    print('Epoch [{}/{}], Loss: {:.4f}'.format(epoch+1, 10000, loss.item()))
+    print('Epoch [{}/{}], Loss: {:.8f}'.format(epoch+1, 4000, loss.item()))
 
 # 预测结果
 X_test = torch.FloatTensor(X[-1:])
@@ -84,5 +82,5 @@ output = output[:, 0]
 # 打印预测结果
 print('Predicted Close price:')
 print(output.flatten())
-
-# 保存模型
+print('Actual Close price:')
+print(y_test.cpu().numpy().flatten())

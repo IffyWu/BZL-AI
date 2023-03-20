@@ -73,7 +73,7 @@ class MLP(nn.Module):
 
 
 # 加载数据
-data_file = 'your_data_file.csv'
+data_file = 'BTCUSDT_2017-08-18 to 2022-08-09.csv'
 df = pd.read_csv(data_file)
 df = calculate_indicators(df)
 df = convert_time(df)
@@ -122,4 +122,42 @@ for epoch in range(epochs):
         batch_labels = batch_labels.to(device).float()
 
         optimizer.zero_grad()
-        outputs = model(batch_data.view(batch_data
+        outputs = model(batch_data.view(batch_data.size(0), -1))
+        loss = criterion(outputs, batch_labels)
+        loss.backward()
+        optimizer.step()
+
+    model.eval()
+    with torch.no_grad():
+        test_loss = 0.0
+        for batch_data, batch_labels in test_loader:
+            batch_data = batch_data.to(device).float()
+            batch_labels = batch_labels.to(device).float()
+
+            outputs = model(batch_data.view(batch_data.size(0), -1))
+            loss = criterion(outputs, batch_labels)
+            test_loss += loss.item()
+
+        test_loss /= len(test_loader)
+
+
+
+# 预测
+model.eval()
+with torch.no_grad():
+    for batch_data, batch_labels in test_loader:
+        batch_data = batch_data.to(device).float()
+        batch_labels = batch_labels.to(device).float()
+
+        outputs = model(batch_data.view(batch_data.size(0), -1))
+        break
+
+print(outputs)
+
+# # 保存模型
+# torch.save(model.state_dict(), 'your_model_file.pth')
+#
+# # 加载模型
+# model = MLP(input_size, hidden_size, output_size)
+# model.load_state_dict(torch.load('your_model_file.pth'))
+
